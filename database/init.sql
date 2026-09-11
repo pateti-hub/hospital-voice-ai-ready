@@ -1,0 +1,14 @@
+CREATE EXTENSION IF NOT EXISTS vector;
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+CREATE TABLE IF NOT EXISTS departments(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),name varchar(120) UNIQUE NOT NULL,description text);
+CREATE TABLE IF NOT EXISTS doctors(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),department_id uuid NOT NULL REFERENCES departments(id),name varchar(160) NOT NULL,active boolean NOT NULL DEFAULT true);
+CREATE TABLE IF NOT EXISTS slots(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),doctor_id uuid NOT NULL REFERENCES doctors(id),starts_at timestamptz NOT NULL,duration_minutes integer NOT NULL DEFAULT 30,is_available boolean NOT NULL DEFAULT true);
+CREATE TABLE IF NOT EXISTS patients(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),full_name varchar(160) NOT NULL,phone varchar(30) UNIQUE NOT NULL,date_of_birth date,consent_to_call boolean NOT NULL DEFAULT false);
+CREATE TABLE IF NOT EXISTS appointments(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),patient_id uuid NOT NULL REFERENCES patients(id),slot_id uuid UNIQUE NOT NULL REFERENCES slots(id),reason text,status varchar(30) NOT NULL DEFAULT 'booked',idempotency_key varchar(120) UNIQUE NOT NULL,created_at timestamptz NOT NULL DEFAULT now());
+CREATE TABLE IF NOT EXISTS conversations(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),channel varchar(30) NOT NULL DEFAULT 'web',external_call_id varchar(160) UNIQUE,state jsonb NOT NULL DEFAULT '{}',created_at timestamptz NOT NULL DEFAULT now());
+CREATE TABLE IF NOT EXISTS messages(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),conversation_id uuid NOT NULL REFERENCES conversations(id),role varchar(20) NOT NULL,content text NOT NULL,turn_id varchar(80) NOT NULL,latency_ms integer,created_at timestamptz NOT NULL DEFAULT now());
+CREATE TABLE IF NOT EXISTS knowledge_documents(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),title varchar(240) NOT NULL,content text NOT NULL,source_url text,authority integer NOT NULL DEFAULT 1,metadata jsonb NOT NULL DEFAULT '{}',embedding vector(1536),search_vector tsvector GENERATED ALWAYS AS (setweight(to_tsvector('english',coalesce(title,'')),'A')||setweight(to_tsvector('english',coalesce(content,'')),'B')) STORED);
+CREATE INDEX IF NOT EXISTS ix_slots_available_time ON slots(is_available,starts_at);
+CREATE INDEX IF NOT EXISTS ix_messages_conversation ON messages(conversation_id,created_at);
+CREATE INDEX IF NOT EXISTS ix_knowledge_fts ON knowledge_documents USING gin(search_vector);
+CREATE INDEX IF NOT EXISTS ix_knowledge_embedding ON knowledge_documents USING hnsw(embedding vector_cosine_ops);
