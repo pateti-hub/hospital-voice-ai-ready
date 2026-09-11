@@ -10,9 +10,9 @@ class Settings(BaseSettings):
     app_secret: str = "development-only"
     database_url: str = "postgresql+asyncpg://hospital:hospital@localhost:5432/hospital_ai"
     public_base_url: str = "http://localhost:8000"
-    openai_api_key: str | None = None
-    openai_model: str = "gpt-4.1-mini"
-    openai_base_url: str = "https://api.openai.com/v1"
+    groq_api_key: str | None = None
+    groq_model: str = "llama-3.1-8b-instant"
+    groq_base_url: str = "https://api.groq.com/openai/v1"
     cartesia_api_key: str | None = None
     cartesia_version: str = "2026-08-14"
     cartesia_tts_model: str = "sonic-3.6"

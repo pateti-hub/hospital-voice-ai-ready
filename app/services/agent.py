@@ -33,20 +33,27 @@ class AgentResult:
 
 async def _llm_answer(question: str, context: str) -> str | None:
     s = get_settings()
-    if not s.openai_api_key:
+    if not s.groq_api_key:
         return None
-    from openai import AsyncOpenAI
+    from openai import APIConnectionError, APIError, APITimeoutError, AsyncOpenAI
 
-    client = AsyncOpenAI(api_key=s.openai_api_key, base_url=s.openai_base_url)
-    system = """You are a hospital administrative assistant. Help with appointments, departments, hours, and approved hospital policies. Never diagnose, prescribe, or claim emergency expertise. Use only supplied context for hospital facts. If context is insufficient, say so and offer a human handoff. Keep voice answers under 90 words."""
-    r = await client.chat.completions.create(
-        model=s.openai_model,
-        temperature=0,
-        messages=[
-            {"role": "system", "content": system},
-            {"role": "user", "content": f"Context:\n{context}\n\nPatient: {question}"},
-        ],
+    client = AsyncOpenAI(
+        api_key=s.groq_api_key,
+        base_url=s.groq_base_url,
+        timeout=10.0,
     )
+    system = """You are a hospital administrative assistant. Help with appointments, departments, hours, and approved hospital policies. Never diagnose, prescribe, or claim emergency expertise. Use only supplied context for hospital facts. If context is insufficient, say so and offer a human handoff. Keep voice answers under 90 words."""
+    try:
+        r = await client.chat.completions.create(
+            model=s.groq_model,
+            temperature=0,
+            messages=[
+                {"role": "system", "content": system},
+                {"role": "user", "content": f"Context:\n{context}\n\nPatient: {question}"},
+            ],
+        )
+    except (APIConnectionError, APIError, APITimeoutError):
+        return None
     return r.choices[0].message.content
 
 

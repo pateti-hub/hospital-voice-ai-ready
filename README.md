@@ -8,7 +8,7 @@ A runnable, production-minded **development application** for hospital informati
 - PostgreSQL + pgvector schema, sample departments/doctors/slots/policies
 - Idempotent appointment booking with row locking and cancellation
 - Retrieval from an approved hospital knowledge base (PostgreSQL full-text; pgvector-ready)
-- OpenAI-compatible LLM response generation with deterministic fallback
+- Groq LLM response generation through the OpenAI-compatible client, with deterministic fallback
 - Cartesia Ink 2 streaming STT and Sonic 3.6 streaming TTS
 - Cartesia Managed Agents outbound telephony endpoint, patient consent gate, webhooks
 - Emergency/medical-advice guardrails and human-handoff signaling
@@ -44,7 +44,17 @@ Required for voice:
 - `CARTESIA_VOICE_ID`: choose a voice ID; the example is only a public sample.
 
 Required for generative answers:
-- `OPENAI_API_KEY` and optionally `OPENAI_MODEL` / `OPENAI_BASE_URL`.
+- `GROQ_API_KEY`, stored as a GitHub Codespaces secret named `GROQ_API_KEY`. Do not put the secret value in this repository, documentation, or chat.
+- Optional `GROQ_MODEL` and `GROQ_BASE_URL`; the defaults are `llama-3.1-8b-instant` and `https://api.groq.com/openai/v1`.
+
+Groq replaces only the LLM reasoning and response-generation layer. Cartesia remains the STT, TTS, and telephony provider.
+
+To list models currently available to your Groq account, use the Groq models API with the secret held in your shell or Codespaces environment:
+
+```bash
+curl https://api.groq.com/openai/v1/models \
+	-H "Authorization: Bearer $GROQ_API_KEY"
+```
 
 Required for managed telephony:
 - `CARTESIA_AGENT_ID`
@@ -111,6 +121,7 @@ Follow `docs/PLAYWRIGHT_MCP_LATER.md` after the hospital website is stable. The 
 ```bash
 pytest -q
 ruff check .
+python -m compileall -q app tests
 python scripts/check.py
 ```
 

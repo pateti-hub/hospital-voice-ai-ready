@@ -26,6 +26,7 @@ PostgreSQL   approved RAG   tools
 5. **Voice is streaming.** Audio frames, partial/final transcripts, turn IDs, and cancellation are explicit.
 6. **Safety is deterministic.** Emergency and medical-advice boundaries run before generation.
 7. **No PHI in telemetry.** Current logs keep IDs/event types; production redaction still requires review.
+8. **LLM provider boundary.** Groq handles only grounded reasoning and response generation through the installed OpenAI-compatible client. Cartesia remains the STT, TTS, and telephony provider.
 
 ## Production-oriented flows
 
